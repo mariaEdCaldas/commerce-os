@@ -79,6 +79,12 @@ SuperAdmin and leaves the previous account active. Outside development (`APP_ENV
 than `dev`), the server refuses to start while the configured password is the public
 default; this checks the configuration, not the password stored in the database.
 
+Vendure's public default password is only tolerated for a throwaway local database, and the server
+logs a "Default superadmin password is configured" warning whenever it is configured. If your local
+installation was created with it, change the password in the Dashboard (Settings → Administrators)
+and then update `SUPERADMIN_PASSWORD` in `apps/server/.env` to match. Never copy such a database or
+`.env` to any shared, staging or production environment.
+
 ## Production Build
 
 Build all packages:

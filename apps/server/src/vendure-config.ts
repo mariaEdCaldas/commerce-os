@@ -32,6 +32,11 @@ export const config: VendureConfig = {
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
         trustProxy: IS_DEV ? false : 1,
+        // Rejects GraphQL requests a cross-site HTML form or plain GET could send (login CSRF):
+        // only application/json requests, or those carrying an `Apollo-Require-Preflight` or
+        // `x-apollo-operation-name` header, are executed. The storefront and GraphiQL post JSON,
+        // and the Dashboard sends the header, including on multipart asset uploads.
+        csrfPrevention: true,
         // Which browser origins may make credentialed requests to the Shop and Admin APIs.
         // In dev any origin is reflected, so a storefront on any port works. In production set
         // CORS_ORIGINS to a comma-separated list of the origins you serve, for example

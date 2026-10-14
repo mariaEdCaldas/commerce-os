@@ -183,6 +183,24 @@ test('API failures raise typed errors that keep their previous messages', async 
         error instanceof api.VendureGraphQLError && error instanceof Error && error.message === 'a, b');
 });
 
+test('API requests are JSON POSTs, which Vendure accepts with csrfPrevention enabled', async (t) => {
+    // Vendure blocks GET, form, multipart and text/plain requests that lack an
+    // Apollo-Require-Preflight header; the storefront relies on never sending one of those.
+    const api = await loadApi(t);
+    const fetch = t.mock.method(globalThis, 'fetch', async () => jsonResponse({data: {logout: {success: true}}}));
+
+    await api.query('document', {}, {token: 'session-token', fetch: {signal: AbortSignal.timeout(1_000)}});
+    await api.mutate('document', {}, {languageCode: 'de'});
+
+    assert.equal(fetch.mock.callCount(), 2);
+    for (const call of fetch.mock.calls) {
+        const [, init] = call.arguments;
+        assert.equal(init.method, 'POST');
+        assert.equal(init.headers['Content-Type'], 'application/json');
+        assert.deepEqual(JSON.parse(init.body), {query: 'mutation Logout { logout { success } }', variables: {}});
+    }
+});
+
 // --- Logout ------------------------------------------------------------------------
 
 async function loadLogout(t, cookieStore) {

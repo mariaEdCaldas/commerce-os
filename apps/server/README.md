@@ -45,6 +45,15 @@ origin as the API, so it is not affected.
 
 In development (`APP_ENV=dev`) any origin is allowed, so you do not need to set this locally.
 
+### CSRF protection
+
+`apiOptions.csrfPrevention` is enabled. The Shop and Admin APIs only execute requests sent as
+`application/json`, or carrying an `Apollo-Require-Preflight` or `x-apollo-operation-name` header.
+GET, form, multipart and `text/plain` requests without one of those headers get a `400`, which stops
+a cross-site HTML form from logging a browser into an attacker's account (login CSRF). The storefront
+and GraphiQL post JSON, and the Dashboard sends `Apollo-Require-Preflight` on every request,
+including asset uploads. A new client that uploads files or queries over GET must send that header.
+
 ### Storefront links, assets and email
 
 Outside development (`APP_ENV` other than `dev`) the server refuses to start until these are set:
@@ -198,6 +207,9 @@ change the `customFields` config, add entities in a plugin or upgrade Vendure. K
 4. Apply it with `npm run migration:run`, or by starting the server. Undo the last migration with
    `npm run migration:revert`.
 
+When a migration fails, or the database cannot be reached, the server logs the error and exits with
+code 1 instead of starting against a partially migrated schema.
+
 Files in `src/migrations` must each export only their migration class, because TypeORM loads every
 export there as a migration; shared helpers belong elsewhere, like `src/migration-baseline.ts`.
 
@@ -205,6 +217,21 @@ Back up before applying migrations to a database whose data matters:
 
 ```shell
 docker compose exec -T postgres_db pg_dump -U vendure -d vendure -Fc > vendure-$(date +%Y%m%d-%H%M%S).dump
+```
+
+## Tests
+
+```shell
+npm test
+```
+
+runs the unit tests. The end-to-end tests in `test/e2e` need a running server and are skipped
+otherwise. They check that requests a cross-site page could send are rejected, and that the
+storefront's guest cart, login, checkout and logout flow still works. They create a customer and an
+order, so run them against a disposable copy of the database, with the server pointed at it:
+
+```shell
+E2E_SERVER_URL=http://localhost:3002 E2E_ADMIN_USERNAME=<superadmin> E2E_ADMIN_PASSWORD=<password> npm test
 ```
 
 ## Troubleshooting

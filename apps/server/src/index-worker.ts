@@ -8,5 +8,6 @@ assertSecureProductionConfig(process.env);
 bootstrapWorker(config)
     .then(worker => worker.startJobQueue())
     .catch(err => {
-        console.log(err);
+        process.exitCode = 1;
+        console.error('The worker failed to start.', err instanceof Error ? (err.stack ?? err.message) : String(err));
     });
