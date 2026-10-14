@@ -15,6 +15,11 @@ function productionEnv(overrides = {}) {
         SUPERADMIN_PASSWORD: STRONG_PASSWORD,
         COOKIE_SECRET: STRONG_SECRET,
         CORS_ORIGINS: 'https://shop.example.com,https://admin.example.com',
+        STOREFRONT_URL: 'https://shop.example.com',
+        SMTP_HOST: 'smtp.example.com',
+        SMTP_USER: 'mailer',
+        SMTP_PASSWORD: 'smtp-password',
+        EMAIL_FROM: '"Shop" <noreply@shop.example.com>',
         ...overrides,
     };
 }
@@ -66,6 +71,54 @@ test('every CORS_ORIGINS entry must be an https origin without a path', () => {
         'CORS_ORIGINS entry 4 must use https (plain http is only accepted for localhost).',
     ]);
     assert.deepEqual(problemsFor({CORS_ORIGINS: 'http://localhost:3003, http://127.0.0.1:3003'}), []);
+});
+
+test('STOREFRONT_URL must be a secure URL', () => {
+    for (const value of [undefined, ' ']) {
+        assert.deepEqual(problemsFor({STOREFRONT_URL: value}), [
+            'STOREFRONT_URL must be set to the public URL that account emails link to.',
+        ]);
+    }
+    assert.deepEqual(problemsFor({STOREFRONT_URL: 'shop.example.com'}), ['STOREFRONT_URL is not a valid URL.']);
+    assert.deepEqual(problemsFor({STOREFRONT_URL: 'http://shop.example.com'}), [
+        'STOREFRONT_URL must use https (plain http is only accepted for localhost).',
+    ]);
+    assert.deepEqual(problemsFor({STOREFRONT_URL: 'https://example.com/shop/'}), []);
+    assert.deepEqual(problemsFor({STOREFRONT_URL: 'http://localhost:3003'}), []);
+});
+
+test('ASSET_URL_PREFIX is optional but must be a secure URL when set', () => {
+    assert.deepEqual(problemsFor({ASSET_URL_PREFIX: ''}), []);
+    assert.deepEqual(problemsFor({ASSET_URL_PREFIX: 'https://cdn.example.com/assets/'}), []);
+    assert.deepEqual(problemsFor({ASSET_URL_PREFIX: 'http://cdn.example.com/assets/'}), [
+        'ASSET_URL_PREFIX must use https (plain http is only accepted for localhost).',
+    ]);
+});
+
+test('emails must be sent over SMTP instead of exposed on /mailbox', () => {
+    assert.deepEqual(problemsFor({SMTP_HOST: undefined, SMTP_USER: undefined, SMTP_PASSWORD: undefined}), [
+        'SMTP_HOST must be set so that emails are sent instead of exposed on /mailbox.',
+    ]);
+    assert.deepEqual(problemsFor({SMTP_USER: undefined, SMTP_PASSWORD: undefined}), []);
+    assert.deepEqual(problemsFor({SMTP_PASSWORD: undefined}), ['SMTP_USER and SMTP_PASSWORD must be set together.']);
+    assert.deepEqual(problemsFor({SMTP_USER: ''}), ['SMTP_USER and SMTP_PASSWORD must be set together.']);
+    for (const port of ['0', '65536', '587a', '-1']) {
+        assert.deepEqual(problemsFor({SMTP_PORT: port}), ['SMTP_PORT must be a port number between 1 and 65535.']);
+    }
+    assert.deepEqual(problemsFor({SMTP_PORT: '465', SMTP_SECURE: 'true'}), []);
+    assert.deepEqual(problemsFor({SMTP_SECURE: 'yes'}), ['SMTP_SECURE must be "true" or "false".']);
+    assert.deepEqual(problemsFor({EMAIL_FROM: undefined}), [
+        'EMAIL_FROM must be set to the sender address of outgoing emails.',
+    ]);
+});
+
+test('the SMTP password never appears in the startup error', () => {
+    const env = productionEnv({SMTP_USER: '', SMTP_PASSWORD: 'leaky-smtp-password'});
+    assert.throws(() => assertSecureProductionConfig(env), (error) => {
+        assert.match(error.message, /SMTP_PASSWORD/);
+        assert.equal(error.message.includes('leaky-smtp-password'), false);
+        return true;
+    });
 });
 
 test('the startup error lists every problem without revealing any value', () => {

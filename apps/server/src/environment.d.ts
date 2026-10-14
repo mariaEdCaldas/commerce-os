@@ -12,6 +12,14 @@ declare global {
             SUPERADMIN_USERNAME: string;
             SUPERADMIN_PASSWORD: string;
             CORS_ORIGINS?: string;
+            STOREFRONT_URL?: string;
+            ASSET_URL_PREFIX?: string;
+            EMAIL_FROM?: string;
+            SMTP_HOST?: string;
+            SMTP_PORT?: string;
+            SMTP_SECURE?: string;
+            SMTP_USER?: string;
+            SMTP_PASSWORD?: string;
             DB_HOST: string;
             DB_PORT: number;
             DB_NAME: string;

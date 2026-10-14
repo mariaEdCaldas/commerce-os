@@ -11,11 +11,20 @@ import { DashboardPlugin } from '@vendure/dashboard/plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
 import path from 'path';
+import {
+    getAssetUrlPrefix,
+    getEmailFromAddress,
+    getSmtpTransport,
+    getStorefrontEmailUrls,
+} from './deployment-config';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 // PORT wins because hosting platforms inject it into the environment at runtime, and that
 // must take precedence over any value baked into the .env file at scaffold time.
 const serverPort = +process.env.PORT || +process.env.VENDURE_SERVER_PORT || 3000;
+// Without SMTP_HOST, emails are written to files and served on /mailbox instead of sent.
+// production-config.ts refuses that outside development.
+const smtpTransport = getSmtpTransport(process.env);
 
 export const config: VendureConfig = {
     apiOptions: {
@@ -75,28 +84,28 @@ export const config: VendureConfig = {
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
-            // For local dev, the correct value for assetUrlPrefix should
-            // be guessed correctly, but for production it will usually need
-            // to be set manually to match your production url.
-            assetUrlPrefix: IS_DEV ? undefined : 'https://www.my-shop.com/assets/',
+            // Unset, Vendure derives the prefix from each request (honouring trustProxy). Set
+            // ASSET_URL_PREFIX when assets are served from another host, such as a CDN.
+            assetUrlPrefix: getAssetUrlPrefix(process.env),
         }),
         DefaultSchedulerPlugin.init(),
         DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
         DefaultSearchPlugin.init({ bufferUpdates: false, indexStockStatus: true }),
         EmailPlugin.init({
-            devMode: true,
-            outputPath: path.join(__dirname, '../static/email/test-emails'),
-            route: 'mailbox',
+            ...(smtpTransport
+                ? { transport: smtpTransport }
+                : {
+                      devMode: true as const,
+                      outputPath: path.join(__dirname, '../static/email/test-emails'),
+                      route: 'mailbox',
+                  }),
             handlers: defaultEmailHandlers,
             templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
             globalTemplateVars: {
-                // The following variables will change depending on your storefront implementation.
-                // These point at the storefront created alongside this server, on the port it
-                // was assigned. Change them if you move the storefront elsewhere.
-                fromAddress: '"example" <noreply@example.com>',
-                verifyEmailAddressUrl: 'http://localhost:3003/verify',
-                passwordResetUrl: 'http://localhost:3003/reset-password',
-                changeEmailAddressUrl: 'http://localhost:3003/account/verify-email'
+                // EMAIL_FROM and STOREFRONT_URL; in development they default to an example
+                // sender and the storefront created alongside this server.
+                fromAddress: getEmailFromAddress(process.env),
+                ...getStorefrontEmailUrls(process.env),
             },
         }),
         DashboardPlugin.init({

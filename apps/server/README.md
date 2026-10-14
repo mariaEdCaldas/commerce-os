@@ -45,6 +45,25 @@ origin as the API, so it is not affected.
 
 In development (`APP_ENV=dev`) any origin is allowed, so you do not need to set this locally.
 
+### Storefront links, assets and email
+
+Outside development (`APP_ENV` other than `dev`) the server refuses to start until these are set:
+
+| Variable | Purpose |
+| --- | --- |
+| `STOREFRONT_URL` | Public storefront URL, e.g. `https://shop.example.com`. Verification, password reset and email change links point at `/verify`, `/reset-password` and `/account/verify-email` under it. Must use https. |
+| `SMTP_HOST` | SMTP server that sends emails. |
+| `SMTP_PORT` | Optional, defaults to `587`. |
+| `SMTP_SECURE` | Optional, `true` for implicit TLS (usually port `465`), defaults to `false` (STARTTLS). |
+| `SMTP_USER`, `SMTP_PASSWORD` | Optional, but set both or neither. |
+| `EMAIL_FROM` | Sender address, e.g. `"My Shop" <noreply@shop.example.com>`. |
+| `ASSET_URL_PREFIX` | Optional public URL of uploaded assets, e.g. a CDN. When unset, Vendure derives it from each request. Must use https. |
+
+Without `SMTP_HOST` the EmailPlugin runs in dev mode: it writes emails to `static/email/test-emails`
+and serves them, password reset links included, on the unauthenticated `/mailbox` route. That is
+the default in development, where `STOREFRONT_URL` falls back to `http://localhost:3003`. Set
+`SMTP_HOST` locally to test real delivery, for example against a local SMTP catcher.
+
 ### Running directly
 
 You can run the built files directly with the `start` script:
