@@ -16,6 +16,25 @@ commerce-os/
 
 ## Getting Started
 
+### Node.js
+
+The project uses the Node.js version in [`.nvmrc`](.nvmrc) (22.23.3). The `engines` field in
+`package.json` accepts `^22.22.2 || ^24.15.0`, the narrowest range required by the locked
+dependencies; Node 24 releases before 24.15.0 do not satisfy it.
+
+In every new WSL terminal, activate it with [nvm](https://github.com/nvm-sh/nvm) before
+running any `npm` command:
+
+```bash
+cd ~/commerce-os
+nvm use            # reads .nvmrc; run `nvm install` once if it is missing
+command -v node    # must print a path under ~/.nvm, not /mnt/c/...
+```
+
+Without an active nvm version, `npm` in WSL can resolve to the Windows installation
+under `/mnt/c/Program Files/nodejs`, which installs Windows-only native binaries into
+`node_modules`.
+
 ### Development
 
 Start both the server and storefront in development mode:
