@@ -228,12 +228,27 @@ docker compose exec -T postgres_db pg_dump -U vendure -d vendure -Fc > vendure-$
 
 ```shell
 npm test
+npm run check-types
 ```
 
-runs the unit tests. The end-to-end tests in `test/e2e` need a running server and are skipped
-otherwise. They check that requests a cross-site page could send are rejected, and that the
-storefront's guest cart, login, checkout and logout flow still works. They create a customer and an
-order, so run them against a disposable copy of the database, with the server pointed at it:
+runs the unit tests and the type check. The end-to-end tests in `test/e2e` need a running server
+and are skipped otherwise. They check that requests a cross-site page could send are rejected, and
+that the storefront's guest cart, login, checkout and logout flow still works.
+
+```shell
+npm run build:server
+npm run test:e2e
+```
+
+starts the compiled server and worker on an **empty** database, checks that the migrations match the
+entities, seeds a minimal catalogue through the Admin API
+([test/e2e/seed-catalog.mjs](./test/e2e/seed-catalog.mjs)), runs the tests and stops both processes.
+It reads the server configuration and `E2E_SERVER_URL`, `E2E_ADMIN_USERNAME` and `E2E_ADMIN_PASSWORD`
+from the environment; the `e2e` job in [the CI workflow](../../.github/workflows/ci.yml) lists a
+complete set. The tests create a customer and an order, so only use a throwaway database.
+
+To run only the tests against a server you started yourself, on a database that already has products
+in stock and a `standard-payment` method:
 
 ```shell
 E2E_SERVER_URL=http://localhost:3002 E2E_ADMIN_USERNAME=<superadmin> E2E_ADMIN_PASSWORD=<password> npm test

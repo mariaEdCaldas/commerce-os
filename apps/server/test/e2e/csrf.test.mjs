@@ -1,7 +1,8 @@
 /**
  * Runs against a live server, so it is skipped unless E2E_SERVER_URL is set. The database must
- * hold sellable products and the scaffold's shipping and payment methods, and the customer
- * created here is left behind, so use a disposable database (see "End-to-end tests" in README.md):
+ * hold a product in stock, a shipping method and the `standard-payment` method, as seeded by
+ * seed-catalog.mjs, and the customer created here is left behind, so use a disposable database.
+ * `npm run test:e2e` sets all of this up (see "Tests" in README.md). Against a running server:
  *
  *   E2E_SERVER_URL=http://localhost:3002 E2E_ADMIN_USERNAME=... E2E_ADMIN_PASSWORD=... npm test
  */

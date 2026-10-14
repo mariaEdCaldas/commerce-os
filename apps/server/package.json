@@ -17,7 +17,9 @@
     "migration:generate": "vendure migrate -o src/migrations -g",
     "migration:run": "vendure migrate -r",
     "migration:revert": "vendure migrate --revert",
-    "test": "node --test \"test/**/*.test.mjs\""
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "test:e2e": "bash scripts/e2e.sh",
+    "check-types": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@vendure/asset-server-plugin": "3.7.4",

@@ -85,6 +85,40 @@ installation was created with it, change the password in the Dashboard (Settings
 and then update `SUPERADMIN_PASSWORD` in `apps/server/.env` to match. Never copy such a database or
 `.env` to any shared, staging or production environment.
 
+## Continuous Integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request to `main` and every
+push to `main`, with read-only repository permissions, in three independent jobs. Each installs only
+its workspace with `npm ci --workspace <name>`, on the Node.js version in `.nvmrc`.
+
+| Job | Runs | A failure means |
+| --- | --- | --- |
+| Server unit tests and types | `npm test` and `npm run check-types` in `apps/server` | A unit test or a type error in the server; the log names it. |
+| Storefront tests, types and lint | `npm test`, `npm run lint`, `npm run check-types` and `npm run upgrade:validate` in `apps/storefront` | A storefront test, lint rule, type error or malformed upgrade note. |
+| End-to-end tests on a fresh database | `npm run build:server`, then `npm run test:e2e` in `apps/server`, against PostgreSQL and Mailpit service containers | See below. |
+
+`npm run test:e2e` ([`apps/server/scripts/e2e.sh`](apps/server/scripts/e2e.sh)) prints which stage it
+reached, and on failure the last lines of the server and worker logs:
+
+- *The server exited before the API was ready*: start-up failed, for example a migration error or a
+  rejected production configuration (the job runs with `APP_ENV=ci`, so the production checks apply).
+- *The entities differ from the schema the migrations create*: an entity or custom field changed
+  without a migration. Generate one with `npm run migration:generate -- <Name>` in `apps/server`
+  and commit it.
+- *A seed step failed*, or *search did not list the product*: the Admin API rejected the test data,
+  or the worker did not index it.
+- *A test failed*: CSRF protection or the storefront's cart, login, checkout or logout flow broke.
+
+The database, SuperAdmin password and cookie secret exist only for the job: the passwords are
+generated per run and masked in the logs, and no repository secrets are used. The job does not build
+the Dashboard, the storefront's production bundle or the Docker image. The workflow in
+`apps/storefront/.github/` belongs to the upstream storefront starter and is not run by GitHub.
+
+To reproduce the end-to-end job locally, start an empty PostgreSQL database, export the environment
+of the `e2e` job in the workflow (pointing `DB_*` at your database and with your own
+`SUPERADMIN_PASSWORD`, `E2E_ADMIN_PASSWORD` and `COOKIE_SECRET`), then run `npm run build:server` and
+`npm run test:e2e` in `apps/server`. Never point it at a database whose data you want to keep.
+
 ## Production Build
 
 Build all packages:
