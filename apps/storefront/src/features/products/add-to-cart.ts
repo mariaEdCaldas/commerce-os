@@ -19,7 +19,8 @@ export async function addToCart(variantId: string, quantity = 1) {
             {useAuthToken: true, currencyCode},
         );
 
-        if (result.token) await setAuthToken(result.token);
+        // Vendure only returns a token here when it had to start an anonymous session.
+        if (result.token) await setAuthToken(result.token, 'guest');
 
         if (result.data.addItemToOrder.__typename === 'Order') {
             updateTag('cart');

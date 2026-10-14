@@ -27,6 +27,26 @@ interface VendureResponse<T> {
 }
 
 /**
+ * Thrown when the Vendure API answers with a non-2xx HTTP status.
+ */
+export class VendureHttpError extends Error {
+    constructor(readonly status: number) {
+        super(`HTTP error! status: ${status}`);
+        this.name = 'VendureHttpError';
+    }
+}
+
+/**
+ * Thrown when the Vendure API answers with GraphQL errors.
+ */
+export class VendureGraphQLError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'VendureGraphQLError';
+    }
+}
+
+/**
  * Extract the Vendure auth token from response headers
  */
 function extractAuthToken(headers: Headers): string | null {
@@ -91,13 +111,13 @@ export async function query<TResult, TVariables>(
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new VendureHttpError(response.status);
     }
 
     const result: VendureResponse<TResult> = await response.json();
 
     if (result.errors) {
-        throw new Error(result.errors.map(e => e.message).join(', '));
+        throw new VendureGraphQLError(result.errors.map(e => e.message).join(', '));
     }
 
     if (!result.data) {

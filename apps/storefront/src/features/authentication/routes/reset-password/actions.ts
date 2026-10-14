@@ -34,7 +34,7 @@ export async function resetPasswordAction(prevState: { error?: string } | undefi
 
     // Store the token in a cookie if returned
     if (result.token) {
-        await setAuthToken(result.token);
+        await setAuthToken(result.token, 'customer');
     }
 
     const locale = await getLocale();

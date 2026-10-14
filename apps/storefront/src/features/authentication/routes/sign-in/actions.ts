@@ -29,7 +29,7 @@ export async function loginAction(prevState: { error?: string } | undefined, for
 
     // Store the token in a cookie if returned
     if (result.token) {
-        await setAuthToken(result.token);
+        await setAuthToken(result.token, 'customer');
     }
 
     const locale = await getLocale();

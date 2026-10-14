@@ -26,7 +26,7 @@ export async function verifyAccountAction(token: string, password?: string) {
 
         // Store the token in a cookie if returned
         if (result.token) {
-            await setAuthToken(result.token);
+            await setAuthToken(result.token, 'customer');
         }
 
         return {success: true};
