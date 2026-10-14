@@ -139,31 +139,73 @@ npx vendure add
 
 and select `[Plugin] Create a new Vendure plugin`.
 
-## Migrations
+## Database
 
-[Migrations](https://www.vendure.io/docs/developer-guide/migrations/) allow safe updates to the database schema. Migrations
-will be required whenever you make changes to the `customFields` config or define new entities in a plugin.
+### Starting PostgreSQL
 
-To generate a new migration, run:
+The `postgres_db` service in [docker-compose.yml](./docker-compose.yml) publishes PostgreSQL on port
+`6543` and stores its data in the `commerce-os_postgres_db_data` volume. It creates the `vendure`
+database and user, so `.env` needs `DB_HOST=localhost`, `DB_PORT=6543`, `DB_NAME=vendure`,
+`DB_USERNAME=vendure`, `DB_SCHEMA=public` and a `DB_PASSWORD` of your own, which Compose also reads
+from `.env` when it first initialises the volume.
 
+```shell
+docker compose up -d postgres_db
+docker compose ps postgres_db     # should report "running"
 ```
-npx vendure migrate
+
+The service restarts with Docker (`restart: unless-stopped`). If the server cannot reach port
+`6543`, check that the container is running; `docker compose up -d postgres_db` starts it again
+without touching its data. Never run `docker compose down -v`, which deletes the volume.
+
+On WSL, `docker` only works inside the distro when Docker Desktop's integration is enabled for it:
+Docker Desktop → Settings → Resources → WSL integration → enable the distro → Apply & restart.
+Until then, the Windows client works from WSL as `docker.exe`.
+
+### Preparing a new database
+
+Nothing beyond an empty database is needed. On every start, `src/index.ts` runs the pending
+migrations before bootstrapping, so the first start creates the schema from
+`src/migrations/*-InitialSchema.ts`, and Vendure then adds the default channel, roles and the
+SuperAdmin from `SUPERADMIN_USERNAME`/`SUPERADMIN_PASSWORD`. To create the schema without starting
+the server, run `npm run migration:run`. Products and other catalogue data are not part of the
+schema; add them in the Dashboard or with Vendure's import tools.
+
+### Databases created by the scaffold
+
+`@vendure/create` builds its database with TypeORM's `synchronize` and records no migration. The
+`InitialSchema` migration recognises such a database: when every table it would create already
+exists, it records itself as applied without changing anything. When only some of them exist it
+fails and names the missing tables, and the database must be restored from a backup or reconciled
+by hand. Its tables, columns, indexes and constraints were checked to be identical to those
+`synchronize` produces for this configuration.
+
+### Migrations
+
+[Migrations](https://docs.vendure.io/guides/developer-guide/migrations/) are required whenever you
+change the `customFields` config, add entities in a plugin or upgrade Vendure. Keep
+`dbConnectionOptions.synchronize` set to `false`.
+
+1. Change the configuration.
+2. Generate the migration against a database that is up to date with the existing migrations:
+   ```shell
+   npm run migration:generate -- AddProductCustomFields
+   ```
+   This compares the configured entities with the connected database and writes
+   `src/migrations/<timestamp>-AddProductCustomFields.ts`. It reports "No changes" when there is
+   nothing to migrate, which also makes it a read-only check that the database is in sync.
+3. Review the SQL, then commit the file.
+4. Apply it with `npm run migration:run`, or by starting the server. Undo the last migration with
+   `npm run migration:revert`.
+
+Files in `src/migrations` must each export only their migration class, because TypeORM loads every
+export there as a migration; shared helpers belong elsewhere, like `src/migration-baseline.ts`.
+
+Back up before applying migrations to a database whose data matters:
+
+```shell
+docker compose exec -T postgres_db pg_dump -U vendure -d vendure -Fc > vendure-$(date +%Y%m%d-%H%M%S).dump
 ```
-
-The generated migration file will be found in the `./src/migrations/` directory, and should be committed to source control.
-Next time you start the server, and outstanding migrations found in that directory will be run by the `runMigrations()`
-function in the [index.ts file](./src/index.ts).
-
-If, during initial development, you do not wish to manually generate a migration on each change to customFields etc, you
-can set `dbConnectionOptions.synchronize` to `true`. This will cause the database schema to get automatically updated
-on each start, removing the need for migration files. Note that this is **not** recommended once you have production
-data that you cannot lose.
-
----
-
-You can also run any pending migrations manually, without starting the server via the "vendure migrate" command.
-
----
 
 ## Troubleshooting
 

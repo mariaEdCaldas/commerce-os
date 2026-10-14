@@ -13,6 +13,9 @@ name: 'commerce-os'
 services:
     postgres_db:
         image: postgres:16-alpine
+        # Comes back after Docker Desktop or WSL restarts; without it the container stays
+        # exited and the server cannot reach DB_PORT.
+        restart: unless-stopped
         volumes:
             - postgres_db_data:/var/lib/postgresql/data
         ports:

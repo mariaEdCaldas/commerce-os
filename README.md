@@ -35,6 +35,12 @@ Without an active nvm version, `npm` in WSL can resolve to the Windows installat
 under `/mnt/c/Program Files/nodejs`, which installs Windows-only native binaries into
 `node_modules`.
 
+### Database
+
+The server needs PostgreSQL. Start it with `docker compose up -d postgres_db` in `apps/server`;
+the schema is created by migrations on the first server start. See
+[Database in the server README](apps/server/README.md#database) for setup, migrations and backups.
+
 ### Development
 
 Start both the server and storefront in development mode:
