@@ -13,7 +13,8 @@
     "build:dashboard": "vendure build dashboard",
     "start:server": "node ./dist/index.js",
     "start:worker": "node ./dist/index-worker.js",
-    "start": "vendure start all"
+    "start": "vendure start all",
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "@vendure/asset-server-plugin": "3.7.4",

@@ -43,10 +43,16 @@ npm run dev:storefront
 
 ### Admin Credentials
 
-Use these credentials to log in to the Vendure Dashboard:
+The Dashboard SuperAdmin account is created on the first server start from
+`SUPERADMIN_USERNAME` and `SUPERADMIN_PASSWORD` in `apps/server/.env`, which is not
+committed. Before that first start, set both to values of your own, and use a long,
+unique password. Never reuse Vendure's publicly documented default credentials.
 
-- **Username**: superadmin
-- **Password**: superadmin
+Changing these variables later does not change the password of an existing SuperAdmin:
+change it in the Dashboard instead. Changing `SUPERADMIN_USERNAME` creates an additional
+SuperAdmin and leaves the previous account active. Outside development (`APP_ENV` other
+than `dev`), the server refuses to start while the configured password is the public
+default; this checks the configuration, not the password stored in the database.
 
 ## Production Build
 
