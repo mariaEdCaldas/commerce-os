@@ -86,11 +86,16 @@ the server & worker processes.
 
 ### Using Docker
 
-We've included a sample [Dockerfile](./Dockerfile) which you can build with the following command:
+We've included a sample [Dockerfile](./Dockerfile). It installs from the workspace lockfile at the
+repository root, so build it from there:
 
 ```
-docker build -t vendure .
+docker build -f apps/server/Dockerfile -t vendure .
 ```
+
+The image uses the Node.js version in `.nvmrc`. [Dockerfile.dockerignore](./Dockerfile.dockerignore)
+keeps `.env` files, `node_modules` and local build output out of the image; pass configuration to
+the container as environment variables instead.
 
 This builds an image and tags it with the name "vendure". We can then run it with:
 

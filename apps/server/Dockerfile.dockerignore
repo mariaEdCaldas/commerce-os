@@ -1,0 +1,13 @@
+# Used instead of a root .dockerignore when building with -f apps/server/Dockerfile.
+# Paths are relative to the build context, the repository root.
+**/node_modules
+**/.env
+**/.env.*
+.git
+apps/storefront
+!apps/storefront/package.json
+apps/server/dist
+apps/server/src/gql
+apps/server/static/email/test-emails
+apps/server/.vendure
+apps/server/.tanstack
